@@ -18,6 +18,12 @@ pub struct FileTypes {
 struct ConfigAssets;
 
 impl FileTypes {
+    pub fn empty() -> FileTypes {
+        FileTypes {
+            mapping: HashMap::new(),
+        }
+    }
+
     pub fn from_path(path: &Path) -> Result<FileTypes> {
         let contents = load_yaml_file(path)
             .map_err(|_| VividError::CouldNotLoadDatabaseFrom(path.to_string_lossy().into()))?;

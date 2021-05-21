@@ -64,6 +64,26 @@ fn load_filetypes_database(matches: &ArgMatches, user_config_path: &PathBuf) -> 
     }
 }
 
+fn load_overrides_database(matches: &ArgMatches, user_config_path: &PathBuf) -> Result<FileTypes> {
+    let overrides_path_from_arg = matches.value_of("overrides").map(Path::new);
+
+    let mut overrides_path_user = user_config_path.clone();
+    overrides_path_user.push("overrides.yml");
+
+    let overrides_path_env_s = env::var("VIVID_OVERRIDES").ok();
+    let overrides_path_env = overrides_path_env_s.as_ref().map(Path::new);
+    let overrides_path = overrides_path_from_arg
+        .or(overrides_path_env)
+        .or_else(|| util::get_first_existing_path(&[&overrides_path_user]));
+
+    // If there is a specified database file and it exists, use it.
+    // Otherwise, use the embedded file.
+    match overrides_path {
+        Some(path) => FileTypes::from_path(path),
+        None => Ok(FileTypes::empty()),
+    }
+}
+
 fn available_theme_names(user_config_path: &PathBuf) -> Result<Vec<String>> {
     let theme_path_user = user_config_path.clone().join("themes");
     let theme_path_system = PathBuf::from(THEME_PATH_SYSTEM);
@@ -183,7 +203,6 @@ fn run() -> Result<()> {
     let user_config_path = get_user_config_path();
 
     let filetypes = load_filetypes_database(&matches, &user_config_path)?;
-
     let stdout = io::stdout();
     let mut stdout_lock = stdout.lock();
 
